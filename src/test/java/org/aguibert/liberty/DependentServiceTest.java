@@ -7,10 +7,9 @@ import static org.mockserver.model.HttpResponse.response;
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
 
-import org.aguibert.testcontainers.framework.MicroProfileApplication;
 import org.aguibert.testcontainers.framework.jupiter.MicroProfileTest;
 import org.aguibert.testcontainers.framework.jupiter.RestClient;
-import org.junit.ClassRule;
+import org.aguibert.testcontainers.framework.jupiter.SharedContainerConfig;
 import org.junit.jupiter.api.Test;
 import org.mockserver.client.MockServerClient;
 import org.testcontainers.containers.MockServerContainer;
@@ -22,21 +21,13 @@ import com.google.common.net.MediaType;
 
 @Testcontainers
 @MicroProfileTest
+@SharedContainerConfig(AppContainerConfig.class)
 public class DependentServiceTest {
-
-    @ClassRule
-    public static Network network = Network.newNetwork();
 
     @Container
     public static MockServerContainer mockServer = new MockServerContainer()
-                    .withNetwork(network)
+                    .withNetwork(Network.SHARED)
                     .withNetworkAliases("mockserver");
-
-    @Container
-    public static MicroProfileApplication<?> myService = new MicroProfileApplication<>("my-service")
-                    .withAppContextRoot("/myservice")
-                    .withNetwork(network)
-                    .withEnv("org_aguibert_liberty_ExternalRestServiceClient_mp_rest_url", "http://mockserver:" + MockServerContainer.PORT);
 
     @RestClient
     public static PersonServiceWithPassthrough personSvc;

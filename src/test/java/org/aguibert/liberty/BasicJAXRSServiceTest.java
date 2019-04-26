@@ -10,20 +10,16 @@ import java.util.Collection;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
 
-import org.aguibert.testcontainers.framework.MicroProfileApplication;
 import org.aguibert.testcontainers.framework.jupiter.MicroProfileTest;
 import org.aguibert.testcontainers.framework.jupiter.RestClient;
+import org.aguibert.testcontainers.framework.jupiter.SharedContainerConfig;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 @Testcontainers
 @MicroProfileTest
+@SharedContainerConfig(AppContainerConfig.class)
 public class BasicJAXRSServiceTest {
-
-    @Container
-    public static MicroProfileApplication<?> myService = new MicroProfileApplication<>("my-service")
-                    .withAppContextRoot("/myservice");
 
     @RestClient
     public static PersonService personSvc;

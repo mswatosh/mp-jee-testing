@@ -5,10 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collection;
 
-import org.aguibert.testcontainers.framework.MicroProfileApplication;
 import org.aguibert.testcontainers.framework.jupiter.MicroProfileTest;
 import org.aguibert.testcontainers.framework.jupiter.RestClient;
-import org.junit.ClassRule;
+import org.aguibert.testcontainers.framework.jupiter.SharedContainerConfig;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
@@ -17,21 +16,12 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 @Testcontainers
 @MicroProfileTest
+@SharedContainerConfig(AppContainerConfig.class)
 public class MongoAndLibertyTest {
-
-    @ClassRule
-    public static Network network = Network.SHARED;
-
-    @Container
-    public static MicroProfileApplication<?> myService = new MicroProfileApplication<>("my-service")
-                    .withAppContextRoot("/myservice")
-                    .withNetwork(network)
-                    .withEnv("MONGO_HOSTNAME", "testmongo")
-                    .withEnv("MONGO_PORT", "27017");
 
     @Container
     public static GenericContainer<?> mongo = new GenericContainer<>("mongo:3.4")
-                    .withNetwork(network)
+                    .withNetwork(Network.SHARED)
                     .withNetworkAliases("testmongo");
 
     @RestClient

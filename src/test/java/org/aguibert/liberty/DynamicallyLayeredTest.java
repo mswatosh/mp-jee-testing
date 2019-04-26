@@ -6,12 +6,14 @@ import org.aguibert.testcontainers.framework.ComposedMicroProfileApplication;
 import org.aguibert.testcontainers.framework.MicroProfileApplication;
 import org.aguibert.testcontainers.framework.jupiter.MicroProfileTest;
 import org.aguibert.testcontainers.framework.jupiter.RestClient;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 @Testcontainers
 @MicroProfileTest
+@Disabled // not a golden path test
 public class DynamicallyLayeredTest {
 
     /**
