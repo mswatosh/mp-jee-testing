@@ -5,6 +5,8 @@ package org.aguibert.testcontainers.framework;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.Future;
 
 import org.apache.cxf.jaxrs.client.JAXRSClientFactory;
 import org.slf4j.Logger;
@@ -17,12 +19,11 @@ import org.testcontainers.containers.wait.strategy.Wait;
  * @author aguibert
  *
  */
-public class MicroProfileApplication extends GenericContainer<MicroProfileApplication> {
+public class MicroProfileApplication<SELF extends MicroProfileApplication<SELF>> extends GenericContainer<SELF> {
 
     static final Logger LOGGER = LoggerFactory.getLogger(MicroProfileApplication.class);
 
-    private final String appContextRoot;
-    private String baseURL;
+    private String appContextRoot;
 
     public MicroProfileApplication(final String dockerImageName) {
         this(dockerImageName, "/");
@@ -30,14 +31,28 @@ public class MicroProfileApplication extends GenericContainer<MicroProfileApplic
 
     public MicroProfileApplication(final String dockerImageName, String appContextRoot) {
         super(dockerImageName);
+        commonInit();
+    }
+
+    public MicroProfileApplication(Future<String> dockerImageName) {
+        super(dockerImageName);
+        commonInit();
+    }
+
+    private void commonInit() {
         withExposedPorts(9080);
         withLogConsumer(new Slf4jLogConsumer(LOGGER));
-        if (appContextRoot != null && !appContextRoot.startsWith("/"))
+        withAppContextRoot("/");
+        waitingFor(Wait.forHttp(this.appContextRoot)); // TODO: can eventually default this to MP Health 2.0 readiness check
+    }
+
+    public SELF withAppContextRoot(String appContextRoot) {
+        Objects.requireNonNull(appContextRoot);
+        if (!appContextRoot.startsWith("/"))
             appContextRoot = "/" + appContextRoot;
         this.appContextRoot = appContextRoot;
-//        if (appContextRoot == null)
-//            waitingFor(Wait.forLogMessage("^.*CWWKF0011I.*$", 1));
-        waitingFor(Wait.forHttp(this.appContextRoot)); // TODO: can eventually default this to MP Health 2.0 readiness check
+        waitingFor(Wait.forHttp(this.appContextRoot));
+        return self();
     }
 
     public <T> T createRestClient(Class<T> clazz, String applicationPath) {
@@ -54,12 +69,9 @@ public class MicroProfileApplication extends GenericContainer<MicroProfileApplic
     }
 
     public String getBaseURL() throws IllegalStateException {
-        if (baseURL != null)
-            return baseURL;
         if (!this.isRunning())
             throw new IllegalStateException("Container must be running to determine hostname and port");
-        baseURL = "http://" + this.getContainerIpAddress() + ':' + this.getFirstMappedPort();
-        return baseURL;
+        return "http://" + this.getContainerIpAddress() + ':' + this.getFirstMappedPort();
     }
 
 }

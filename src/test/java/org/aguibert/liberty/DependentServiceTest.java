@@ -33,7 +33,7 @@ public class DependentServiceTest {
                     .withNetworkAliases("mockserver");
 
     @Container
-    public static MicroProfileApplication myService = new MicroProfileApplication("my-service", "myservice")
+    public static MicroProfileApplication<?> myService = new MicroProfileApplication<>("my-service", "myservice")
                     .withNetwork(network)
                     .withEnv("org_aguibert_liberty_ExternalRestServiceClient_mp_rest_url", "http://mockserver:" + MockServerContainer.PORT);
 

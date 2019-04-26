@@ -22,7 +22,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 public class BasicJAXRSServiceTest {
 
     @Container
-    public static MicroProfileApplication myService = new MicroProfileApplication("my-service", "myservice");
+    public static MicroProfileApplication<?> myService = new MicroProfileApplication<>("my-service", "myservice");
 
     @RestClient
     public static PersonService personSvc;
