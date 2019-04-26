@@ -20,7 +20,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 public class MongoAndLibertyTest {
 
     @ClassRule
-    public static Network network = Network.newNetwork();
+    public static Network network = Network.SHARED;
 
     @Container
     public static MicroProfileApplication<?> myService = new MicroProfileApplication<>("my-service")

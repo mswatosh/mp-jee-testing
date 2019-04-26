@@ -3,6 +3,7 @@
  */
 package org.aguibert.testcontainers.framework;
 
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.images.builder.ImageFromDockerfile;
 
 /**
  * @author aguibert
@@ -25,6 +27,11 @@ public class MicroProfileApplication<SELF extends MicroProfileApplication<SELF>>
     static final Logger LOGGER = LoggerFactory.getLogger(MicroProfileApplication.class);
 
     private String appContextRoot;
+
+    public MicroProfileApplication() {
+        super(new ImageFromDockerfile().withFileFromPath(".", Paths.get(".")));
+        commonInit();
+    }
 
     public MicroProfileApplication(final String dockerImageName) {
         super(dockerImageName);

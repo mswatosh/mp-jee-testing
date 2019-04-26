@@ -2,13 +2,10 @@ package org.aguibert.liberty;
 
 import static org.junit.Assert.assertNotNull;
 
-import java.nio.file.Paths;
-
 import org.aguibert.testcontainers.framework.MicroProfileApplication;
 import org.aguibert.testcontainers.framework.jupiter.MicroProfileTest;
 import org.aguibert.testcontainers.framework.jupiter.RestClient;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.images.builder.ImageFromDockerfile;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -21,9 +18,8 @@ public class DefaultDockerfileTest {
      * but the docker build may not be tied into the local maven/gradle build
      */
     @Container
-    public static MicroProfileApplication<?> myService = new MicroProfileApplication<>(new ImageFromDockerfile()
-                    .withFileFromPath(".", Paths.get(".")))
-                                    .withAppContextRoot("myservice");
+    public static MicroProfileApplication<?> myService = new MicroProfileApplication<>()
+                    .withAppContextRoot("myservice");
 
     @RestClient
     public static PersonService personSvc;
