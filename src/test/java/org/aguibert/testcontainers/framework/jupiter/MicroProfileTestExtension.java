@@ -9,7 +9,6 @@ import java.util.List;
 
 import org.aguibert.testcontainers.framework.MicroProfileApplication;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
-import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionConfigurationException;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
@@ -20,38 +19,31 @@ import org.testcontainers.junit.jupiter.Container;
 /**
  * @author aguibert
  */
-public class MicroProfileTestExtension implements BeforeEachCallback, BeforeAllCallback, TestInstancePostProcessor {
+public class MicroProfileTestExtension implements BeforeAllCallback, TestInstancePostProcessor {
     private static final Namespace NAMESPACE = Namespace.create(MicroProfileTestExtension.class);
     private static final String NAMESPACE_KEY = "mpExtensionKey";
 
     @Override
     public void postProcessTestInstance(Object testInstance, ExtensionContext context) throws Exception {
-        System.out.println("@AGG post process");
         ExtensionContext.Store store = context.getStore(NAMESPACE);
         store.put(NAMESPACE_KEY, testInstance);
     }
 
     @Override
     public void beforeAll(ExtensionContext context) throws Exception {
-        System.out.println("@AGG beforeAll");
         Class<?> testClass = context.getRequiredTestClass();
         injectRestClients(testClass);
     }
 
     private static void injectRestClients(Class<?> clazz) throws Exception {
-        System.out.println("@AGG injecting rest clients for " + clazz);
         List<Field> restClientFields = AnnotationSupport.findAnnotatedFields(clazz, RestClient.class);
         if (restClientFields.size() == 0)
             return;
 
         // There are 1 or more @RestClient fields. Match them with a server container
-        MicroProfileApplication mpApp = null;
+        MicroProfileApplication<?> mpApp = null;
         List<Field> containerFields = AnnotationSupport.findAnnotatedFields(clazz, Container.class);
         for (Field f : containerFields) {
-            System.out.println("   containerField=" + f);
-            System.out.println("       is assignable1? " + MicroProfileApplication.class.isAssignableFrom(f.getType()));
-            System.out.println("       is assignable2? " + f.getType().isAssignableFrom(MicroProfileApplication.class));
-            System.out.println("       is static? " + Modifier.isStatic(f.getModifiers()));
             if (!MicroProfileApplication.class.isAssignableFrom(f.getType()))
                 continue;
             // TODO: Handle non-static @Container fields
@@ -60,8 +52,7 @@ public class MicroProfileTestExtension implements BeforeEachCallback, BeforeAllC
             if (mpApp != null)
                 throw new ExtensionConfigurationException("Multiple MicroProfileApplication instances found." +
                                                           " Cannot auto-configure @RestClient");
-            mpApp = (MicroProfileApplication) f.get(null);
-            System.out.println("        @AGG found MP App field: " + f);
+            mpApp = (MicroProfileApplication<?>) f.get(null);
         }
 
         if (mpApp == null)
@@ -77,7 +68,7 @@ public class MicroProfileTestExtension implements BeforeEachCallback, BeforeAllC
             checkPublicStaticNonFinal(restClientField);
             Object restClient = mpApp.createRestClient(restClientField.getType());
             restClientField.set(null, restClient);
-            System.out.println("@AGG injected rest client: " + restClient);
+            System.out.println("Injecting rest client for " + restClientField);
         }
     }
 
@@ -87,11 +78,6 @@ public class MicroProfileTestExtension implements BeforeEachCallback, BeforeAllC
             Modifier.isFinal(f.getModifiers())) {
             throw new ExtensionConfigurationException("@RestClient annotated field must be public, static, and non-final: " + f.getName());
         }
-    }
-
-    @Override
-    public void beforeEach(ExtensionContext context) throws Exception {
-        System.out.println("@AGG before each");
     }
 
 }

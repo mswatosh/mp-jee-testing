@@ -23,7 +23,8 @@ public class MongoAndLibertyTest {
     public static Network network = Network.newNetwork();
 
     @Container
-    public static MicroProfileApplication<?> myService = new MicroProfileApplication<>("my-service", "myservice")
+    public static MicroProfileApplication<?> myService = new MicroProfileApplication<>("my-service")
+                    .withAppContextRoot("/myservice")
                     .withNetwork(network)
                     .withEnv("MONGO_HOSTNAME", "testmongo")
                     .withEnv("MONGO_PORT", "27017");

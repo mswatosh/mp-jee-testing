@@ -3,6 +3,7 @@
  */
 package org.aguibert.testcontainers.framework;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -26,10 +27,6 @@ public class MicroProfileApplication<SELF extends MicroProfileApplication<SELF>>
     private String appContextRoot;
 
     public MicroProfileApplication(final String dockerImageName) {
-        this(dockerImageName, "/");
-    }
-
-    public MicroProfileApplication(final String dockerImageName, String appContextRoot) {
         super(dockerImageName);
         commonInit();
     }
@@ -43,7 +40,8 @@ public class MicroProfileApplication<SELF extends MicroProfileApplication<SELF>>
         withExposedPorts(9080);
         withLogConsumer(new Slf4jLogConsumer(LOGGER));
         withAppContextRoot("/");
-        waitingFor(Wait.forHttp(this.appContextRoot)); // TODO: can eventually default this to MP Health 2.0 readiness check
+        waitingFor(Wait.forHttp(this.appContextRoot) // TODO: can eventually default this to MP Health 2.0 readiness check
+                        .withStartupTimeout(Duration.ofSeconds(15))); // lower default from 60s to 15s so we fail faster when things go wrong
     }
 
     public SELF withAppContextRoot(String appContextRoot) {
