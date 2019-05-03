@@ -45,6 +45,7 @@ dockerCompose {
 composeBuild.dependsOn 'war'
 composeUp.dependsOn 'composeBuild'
 
+test.dependsOn 'war'
 test {
     useJUnitPlatform()
     testLogging {

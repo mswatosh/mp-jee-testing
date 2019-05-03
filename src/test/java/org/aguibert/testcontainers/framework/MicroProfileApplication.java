@@ -8,8 +8,8 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.concurrent.Future;
 
@@ -35,8 +35,7 @@ public class MicroProfileApplication<SELF extends MicroProfileApplication<SELF>>
     static final Logger LOGGER = LoggerFactory.getLogger(MicroProfileApplication.class);
 
     private String appContextRoot;
-    private InspectImageResponse imageData;
-    private Optional<ServerAdapter> serverAdapter = Optional.empty();
+    private ServerAdapter serverAdapter;
 
     public MicroProfileApplication() {
         super(new ImageFromDockerfile().withFileFromPath(".", Paths.get(".")));
@@ -62,29 +61,14 @@ public class MicroProfileApplication<SELF extends MicroProfileApplication<SELF>>
         }
         if (adapters.size() == 0) {
             LOGGER.info("No ServerAdapter found. Using default settings.");
-            imageData = DockerClientFactory.instance().client().inspectImageCmd(getDockerImageName()).exec();
-            LOGGER.info("Found exposed ports: " + Arrays.toString(imageData.getContainerConfig().getExposedPorts()));
-            int bestChoice = -1;
-            for (ExposedPort exposedPort : imageData.getContainerConfig().getExposedPorts()) {
-                int port = exposedPort.getPort();
-                // If any ports end with 80, assume they are HTTP ports
-                if (Integer.toString(port).endsWith("80")) {
-                    bestChoice = port;
-                    break;
-                } else if (bestChoice == -1) {
-                    // if no ports match *80, then pick the first port
-                    bestChoice = port;
-                }
-            }
-            addExposedPort(bestChoice);
-            LOGGER.info("Automatically selected exposed port: " + bestChoice);
+            serverAdapter = new DefaultServerAdapter();
         } else if (adapters.size() == 1) {
-            serverAdapter = Optional.of(adapters.get(0));
-            LOGGER.info("Only 1 ServerAdapter found. Will use: " + serverAdapter.get());
-            addExposedPorts(serverAdapter.get().getDefaultExposedPorts());
+            serverAdapter = adapters.get(0);
+            LOGGER.info("Only 1 ServerAdapter found. Will use: " + serverAdapter);
         } else {
             throw new IllegalStateException("Expected 0 or 1 ServerAdapters, but found: " + adapters);
         }
+        addExposedPorts(serverAdapter.getDefaultHttpPort());
         withLogConsumer(new Slf4jLogConsumer(LOGGER));
         withAppContextRoot("/");
     }
@@ -97,9 +81,7 @@ public class MicroProfileApplication<SELF extends MicroProfileApplication<SELF>>
             appContextRoot += "/";
         this.appContextRoot = appContextRoot;
         waitingFor(Wait.forHttp(this.appContextRoot)
-                        .withStartupTimeout(Duration.ofSeconds(30))); // lower default from 60s to 15s so we fail faster when things go wrong
-        // payara micro starts up rather slowly (20s) so increase the timeout for them
-        // TODO: let the ServerAdapter override the default startup timeout
+                        .withStartupTimeout(Duration.ofSeconds(serverAdapter.getDefaultAppStartTimeout())));
         return self();
     }
 
@@ -120,6 +102,51 @@ public class MicroProfileApplication<SELF extends MicroProfileApplication<SELF>>
         if (!this.isRunning())
             throw new IllegalStateException("Container must be running to determine hostname and port");
         return "http://" + this.getContainerIpAddress() + ':' + this.getFirstMappedPort();
+    }
+
+    private class DefaultServerAdapter implements ServerAdapter {
+
+        private final InspectImageResponse imageData;
+        private final int defaultHttpPort;
+
+        public DefaultServerAdapter() {
+            imageData = DockerClientFactory.instance().client().inspectImageCmd(getDockerImageName()).exec();
+            LOGGER.info("Found exposed ports: " + Arrays.toString(imageData.getContainerConfig().getExposedPorts()));
+            int bestChoice = -1;
+            for (ExposedPort exposedPort : imageData.getContainerConfig().getExposedPorts()) {
+                int port = exposedPort.getPort();
+                // If any ports end with 80, assume they are HTTP ports
+                if (Integer.toString(port).endsWith("80")) {
+                    bestChoice = port;
+                    break;
+                } else if (bestChoice == -1) {
+                    // if no ports match *80, then pick the first port
+                    bestChoice = port;
+                }
+            }
+            LOGGER.info("Automatically selecting default HTTP port: " + getDefaultHttpPort());
+            defaultHttpPort = bestChoice;
+        }
+
+        @Override
+        public boolean acceptsImage(Map<String, String> dockerLayerLabels) {
+            return true;
+        }
+
+        @Override
+        public int getDefaultHttpPort() {
+            return defaultHttpPort;
+        }
+
+        @Override
+        public int getDefaultHttpsPort() {
+            return -1;
+        }
+
+        @Override
+        public int getDefaultAppStartTimeout() {
+            return 30;
+        }
     }
 
 }
