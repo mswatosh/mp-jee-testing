@@ -16,6 +16,8 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
 import org.junit.jupiter.api.extension.TestInstancePostProcessor;
 import org.junit.platform.commons.support.AnnotationSupport;
+import org.junit.platform.commons.support.HierarchyTraversalMode;
+import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 
 /**
@@ -38,50 +40,34 @@ public class MicroProfileTestExtension implements BeforeAllCallback, TestInstanc
         injectRestClients(context);
     }
 
-    private static void processSharedContainerConfig(ExtensionContext context) {
+    private static void processSharedContainerConfig(ExtensionContext context) throws IllegalArgumentException, IllegalAccessException {
         Class<?> clazz = context.getRequiredTestClass();
         if (!clazz.isAnnotationPresent(SharedContainerConfig.class))
             return;
 
         Class<? extends SharedContainerConfiguration> configClass = clazz.getAnnotation(SharedContainerConfig.class).value();
-        MicroProfileApplication<?> mpApp = getAppFromConfig(configClass);
-        if (!mpApp.isRunning()) {
-            mpApp.start();
-        } else {
-            System.out.println("Found already running contianer instance: " + mpApp);
+        for (Field containerField : AnnotationSupport.findAnnotatedFields(configClass, Container.class)) {
+            if (!Modifier.isStatic(containerField.getModifiers()) || !Modifier.isPublic(containerField.getModifiers()))
+                continue;
+            boolean isStartable = GenericContainer.class.isAssignableFrom(containerField.getType());
+            if (!isStartable)
+                throw new ExtensionConfigurationException("Annotation is only supported for " + GenericContainer.class + " types");
+            GenericContainer<?> startableContainer = (GenericContainer<?>) containerField.get(null);
+            if (!startableContainer.isRunning()) {
+                startableContainer.start();
+            } else {
+                System.out.println("Found already running contianer instance: " + startableContainer);
+            }
         }
     }
 
-    @SuppressWarnings("resource")
     private static void injectRestClients(ExtensionContext context) throws Exception {
         Class<?> clazz = context.getRequiredTestClass();
         List<Field> restClientFields = AnnotationSupport.findAnnotatedFields(clazz, RestClient.class);
         if (restClientFields.size() == 0)
             return;
 
-        // There are 1 or more @RestClient fields. Match them with a server container
-        MicroProfileApplication<?> mpApp = null;
-        boolean usesSharedConfig = clazz.isAnnotationPresent(SharedContainerConfig.class);
-        if (usesSharedConfig) {
-            Class<? extends SharedContainerConfiguration> configClass = clazz.getAnnotation(SharedContainerConfig.class).value();
-            mpApp = getAppFromConfig(configClass);
-        } else {
-            List<Field> containerFields = AnnotationSupport.findAnnotatedFields(clazz, Container.class);
-            for (Field f : containerFields) {
-                if (!MicroProfileApplication.class.isAssignableFrom(f.getType()))
-                    continue;
-                // TODO: Handle non-static @Container fields
-                if (!Modifier.isStatic(f.getModifiers()))
-                    continue;
-                if (mpApp != null)
-                    throw new ExtensionConfigurationException("Multiple MicroProfileApplication instances found." +
-                                                              " Cannot auto-configure @RestClient");
-                mpApp = (MicroProfileApplication<?>) f.get(null);
-            }
-        }
-
-        if (mpApp == null)
-            throw new ExtensionConfigurationException("No MicroProfileApplication instances found to connect @RestClient with");
+        MicroProfileApplication<?> mpApp = autoDiscoverMPApp(clazz, true);
 
         // At this point we have found exactly one MicroProfileApplication -- proceed with auto-configure
         if (!mpApp.isCreated() || !mpApp.isRunning())
@@ -89,9 +75,7 @@ public class MicroProfileTestExtension implements BeforeAllCallback, TestInstanc
                                                       + "It should have been started by the @Testcontainers extension. "
                                                       + "TIP: Make sure that you list @TestContainers before @MicroProfileTest!");
 
-        for (
-
-        Field restClientField : restClientFields) {
+        for (Field restClientField : restClientFields) {
             checkPublicStaticNonFinal(restClientField);
             Object restClient = mpApp.createRestClient(restClientField.getType());
             restClientField.set(null, restClient);
@@ -99,16 +83,32 @@ public class MicroProfileTestExtension implements BeforeAllCallback, TestInstanc
         }
     }
 
-    private static MicroProfileApplication<?> getAppFromConfig(Class<? extends SharedContainerConfiguration> clazz) {
-        return sharedContainers.computeIfAbsent(clazz, c -> {
-            SharedContainerConfiguration config;
-            try {
-                config = clazz.newInstance();
-            } catch (Exception e) {
-                throw new ExtensionConfigurationException("Unable to create instance of " + clazz, e);
-            }
-            return config.buildContainer();
-        });
+    private static MicroProfileApplication<?> autoDiscoverMPApp(Class<?> testClass, boolean errorIfNone) throws IllegalArgumentException, IllegalAccessException {
+        // First check for any MicroProfileApplicaiton directly present on the test class
+        List<Field> mpApps = AnnotationSupport.findAnnotatedFields(testClass, Container.class,
+                                                                   f -> Modifier.isStatic(f.getModifiers()) &&
+                                                                        Modifier.isPublic(f.getModifiers()) &&
+                                                                        MicroProfileApplication.class.isAssignableFrom(f.getType()),
+                                                                   HierarchyTraversalMode.TOP_DOWN);
+        if (mpApps.size() == 1)
+            return (MicroProfileApplication<?>) mpApps.get(0).get(null);
+        if (mpApps.size() > 1)
+            throw new ExtensionConfigurationException("Should be no more than 1 public static MicroProfileApplication field on " + testClass);
+
+        // If none found, check any SharedContainerConfig
+        String sharedConfigMsg = "";
+        if (testClass.isAnnotationPresent(SharedContainerConfig.class)) {
+            Class<? extends SharedContainerConfiguration> configClass = testClass.getAnnotation(SharedContainerConfig.class).value();
+            MicroProfileApplication<?> mpApp = autoDiscoverMPApp(configClass, false);
+            if (mpApp != null)
+                return mpApp;
+            sharedConfigMsg = " or " + configClass;
+        }
+
+        if (errorIfNone)
+            throw new ExtensionConfigurationException("No public static MicroProfileApplication fields annotated with @Container were located " +
+                                                      "on " + testClass + sharedConfigMsg + " to auto-connect with @RestClient fields.");
+        return null;
     }
 
     private static void checkPublicStaticNonFinal(Field f) {
