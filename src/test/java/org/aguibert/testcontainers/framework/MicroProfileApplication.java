@@ -93,6 +93,8 @@ public class MicroProfileApplication<SELF extends MicroProfileApplication<SELF>>
         Objects.requireNonNull(appContextRoot);
         if (!appContextRoot.startsWith("/"))
             appContextRoot = "/" + appContextRoot;
+        if (!appContextRoot.endsWith("/"))
+            appContextRoot += "/";
         this.appContextRoot = appContextRoot;
         waitingFor(Wait.forHttp(this.appContextRoot)
                         .withStartupTimeout(Duration.ofSeconds(30))); // lower default from 60s to 15s so we fail faster when things go wrong
