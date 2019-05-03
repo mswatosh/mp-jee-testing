@@ -1,5 +1,8 @@
-FROM open-liberty:microProfile2
-ADD build/libs/myservice.war /config/dropins
-COPY src/main/liberty/config /config/
+# OpenLiberty
+#FROM open-liberty:microProfile2
+#ADD build/libs/myservice.war /config/dropins
+#COPY src/main/liberty/config /config/
 
-EXPOSE 9080 9443
+# Wildfly
+FROM jboss/wildfly
+ADD build/libs/myservice.war /opt/jboss/wildfly/standalone/deployments/
