@@ -6,6 +6,7 @@ package org.aguibert.testcontainers.framework;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -62,11 +63,21 @@ public class MicroProfileApplication<SELF extends MicroProfileApplication<SELF>>
         if (adapters.size() == 0) {
             LOGGER.info("No ServerAdapter found. Using default settings.");
             imageData = DockerClientFactory.instance().client().inspectImageCmd(getDockerImageName()).exec();
+            LOGGER.info("Found exposed ports: " + Arrays.toString(imageData.getContainerConfig().getExposedPorts()));
+            int bestChoice = -1;
             for (ExposedPort exposedPort : imageData.getContainerConfig().getExposedPorts()) {
-                addExposedPort(exposedPort.getPort());
-                LOGGER.info("Automatically adding first exposed port: " + exposedPort.getPort());
-                break; // Only expose the first port by default
+                int port = exposedPort.getPort();
+                // If any ports end with 80, assume they are HTTP ports
+                if (Integer.toString(port).endsWith("80")) {
+                    bestChoice = port;
+                    break;
+                } else if (bestChoice == -1) {
+                    // if no ports match *80, then pick the first port
+                    bestChoice = port;
+                }
             }
+            addExposedPort(bestChoice);
+            LOGGER.info("Automatically selected exposed port: " + bestChoice);
         } else if (adapters.size() == 1) {
             serverAdapter = Optional.of(adapters.get(0));
             LOGGER.info("Only 1 ServerAdapter found. Will use: " + serverAdapter.get());
@@ -84,7 +95,9 @@ public class MicroProfileApplication<SELF extends MicroProfileApplication<SELF>>
             appContextRoot = "/" + appContextRoot;
         this.appContextRoot = appContextRoot;
         waitingFor(Wait.forHttp(this.appContextRoot)
-                        .withStartupTimeout(Duration.ofSeconds(15))); // lower default from 60s to 15s so we fail faster when things go wrong
+                        .withStartupTimeout(Duration.ofSeconds(30))); // lower default from 60s to 15s so we fail faster when things go wrong
+        // payara micro starts up rather slowly (20s) so increase the timeout for them
+        // TODO: let the ServerAdapter override the default startup timeout
         return self();
     }
 

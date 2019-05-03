@@ -17,7 +17,7 @@ public class AppContainerConfig implements SharedContainerConfiguration {
     @Container
     public static MicroProfileApplication<?> app = new MicroProfileApplication<>()
                     .withNetwork(Network.SHARED)
-                    .withAppContextRoot("/myservice")
+                    .withAppContextRoot("/myservice/")
                     .withEnv("MONGO_HOSTNAME", "testmongo")
                     .withEnv("MONGO_PORT", "27017")
                     .withEnv("org_aguibert_liberty_ExternalRestServiceClient_mp_rest_url", "http://mockserver:" + MockServerContainer.PORT);
