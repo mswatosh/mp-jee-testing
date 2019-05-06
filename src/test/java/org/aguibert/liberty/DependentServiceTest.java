@@ -1,5 +1,6 @@
 package org.aguibert.liberty;
 
+import static org.aguibert.liberty.AppContainerConfig.mockServer;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
@@ -12,9 +13,6 @@ import org.aguibert.testcontainers.framework.jupiter.RestClient;
 import org.aguibert.testcontainers.framework.jupiter.SharedContainerConfig;
 import org.junit.jupiter.api.Test;
 import org.mockserver.client.MockServerClient;
-import org.testcontainers.containers.MockServerContainer;
-import org.testcontainers.containers.Network;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.google.common.net.MediaType;
@@ -23,11 +21,6 @@ import com.google.common.net.MediaType;
 @MicroProfileTest
 @SharedContainerConfig(AppContainerConfig.class)
 public class DependentServiceTest {
-
-    @Container
-    public static MockServerContainer mockServer = new MockServerContainer()
-                    .withNetwork(Network.SHARED)
-                    .withNetworkAliases("mockserver");
 
     @RestClient
     public static PersonServiceWithPassthrough personSvc;

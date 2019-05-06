@@ -6,8 +6,10 @@ package org.aguibert.testcontainers.framework.jupiter;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.aguibert.testcontainers.framework.MicroProfileApplication;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
@@ -17,6 +19,8 @@ import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
 import org.junit.jupiter.api.extension.TestInstancePostProcessor;
 import org.junit.platform.commons.support.AnnotationSupport;
 import org.junit.platform.commons.support.HierarchyTraversalMode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 
@@ -24,6 +28,9 @@ import org.testcontainers.junit.jupiter.Container;
  * @author aguibert
  */
 public class MicroProfileTestExtension implements BeforeAllCallback, TestInstancePostProcessor {
+
+    static final Logger LOGGER = LoggerFactory.getLogger(MicroProfileTestExtension.class);
+
     private static final Map<Class<? extends SharedContainerConfiguration>, MicroProfileApplication<?>> sharedContainers = new HashMap<>();
     private static final Namespace NAMESPACE = Namespace.create(MicroProfileTestExtension.class);
     private static final String NAMESPACE_KEY = "mpExtensionKey";
@@ -46,6 +53,7 @@ public class MicroProfileTestExtension implements BeforeAllCallback, TestInstanc
             return;
 
         Class<? extends SharedContainerConfiguration> configClass = clazz.getAnnotation(SharedContainerConfig.class).value();
+        Set<GenericContainer<?>> containersToStart = new HashSet<>();
         for (Field containerField : AnnotationSupport.findAnnotatedFields(configClass, Container.class)) {
             if (!Modifier.isStatic(containerField.getModifiers()) || !Modifier.isPublic(containerField.getModifiers()))
                 continue;
@@ -54,11 +62,15 @@ public class MicroProfileTestExtension implements BeforeAllCallback, TestInstanc
                 throw new ExtensionConfigurationException("Annotation is only supported for " + GenericContainer.class + " types");
             GenericContainer<?> startableContainer = (GenericContainer<?>) containerField.get(null);
             if (!startableContainer.isRunning()) {
-                startableContainer.start();
+                containersToStart.add(startableContainer);
             } else {
-                System.out.println("Found already running contianer instance: " + startableContainer);
+                LOGGER.info("Found already running contianer instance: " + startableContainer);
             }
         }
+        LOGGER.info("Starting containers in parallel for " + configClass + " containers=" + containersToStart);
+        long start = System.currentTimeMillis();
+        containersToStart.parallelStream().forEach(container -> container.start());
+        LOGGER.info("All containers started in " + (System.currentTimeMillis() - start) + "ms");
     }
 
     private static void injectRestClients(ExtensionContext context) throws Exception {
@@ -79,7 +91,7 @@ public class MicroProfileTestExtension implements BeforeAllCallback, TestInstanc
             checkPublicStaticNonFinal(restClientField);
             Object restClient = mpApp.createRestClient(restClientField.getType());
             restClientField.set(null, restClient);
-            System.out.println("Injecting rest client for " + restClientField);
+            LOGGER.debug("Injecting rest client for " + restClientField);
         }
     }
 

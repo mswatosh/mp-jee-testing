@@ -9,20 +9,12 @@ import org.aguibert.testcontainers.framework.jupiter.MicroProfileTest;
 import org.aguibert.testcontainers.framework.jupiter.RestClient;
 import org.aguibert.testcontainers.framework.jupiter.SharedContainerConfig;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.Network;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 @Testcontainers
 @MicroProfileTest
 @SharedContainerConfig(AppContainerConfig.class)
 public class MongoAndLibertyTest {
-
-    @Container
-    public static GenericContainer<?> mongo = new GenericContainer<>("mongo:3.4")
-                    .withNetwork(Network.SHARED)
-                    .withNetworkAliases("testmongo");
 
     @RestClient
     public static PersonServiceWithMongo personSvc;
