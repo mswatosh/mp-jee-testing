@@ -56,8 +56,8 @@ public class MicroProfileApplication<SELF extends MicroProfileApplication<SELF>>
         // Look for a ServerAdapter implementation (optional)
         List<ServerAdapter> adapters = new ArrayList<>(1);
         for (ServerAdapter adapter : ServiceLoader.load(ServerAdapter.class)) {
-            //adapters.add(adapter); // TODO: temporarily disable ServerAdapter so we can exercise the default path
-            LOGGER.info("Found ServerAdapter: " + adapter);
+            adapters.add(adapter); // TODO: temporarily disable ServerAdapter so we can exercise the default path
+            LOGGER.info("Found ServerAdapter: " + adapter.getClass());
         }
         if (adapters.size() == 0) {
             LOGGER.info("No ServerAdapter found. Using default settings.");

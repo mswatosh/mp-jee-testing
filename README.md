@@ -1,5 +1,10 @@
 # mp-jee-testing
 
+# Goals
+1. Simple to setup
+1. Work with any JavaEE or MicroProfile runtime
+1. Integration tests (for true-to-production tests), but easy to write and fast to run
+
 # How to run locally:
 
 ```
@@ -8,19 +13,21 @@
 
 # Proposed mockup:
 ```java
+import org.aguibert.testcontainers.framework.jupiter.MicroProfileTest;
+import org.aguibert.testcontainers.framework.jupiter.RestClient;
+import org.aguibert.testcontainers.framework.jupiter.SharedContainerConfig;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.aguibert.testcontainers.framework.*;
 
 @Testcontainers
 @MicroProfileTest
-public class PersonServiceTest {
+public class BasicJAXRSServiceTest {
 
-    @Container
-    public static MicroProfileApplication myService = new MicroProfileApplication("my-service", "myservice");
+    @Container // (1)
+    public static MicroProfileApplication app = new MicroProfileApplication()
+                    .withAppContextRoot("/myservice")
 
-    @RestClient
+    @RestClient // (2)
     public static PersonService personSvc;
 
     @Test
@@ -29,7 +36,17 @@ public class PersonServiceTest {
         Person bob = personSvc.getPerson(bobId);
         assertEquals("Bob", bob.name);
         assertEquals(24, bob.age);
+        assertNotNull(bob.id);
     }
 
 }
 ```
+
+### Explanation of mockup
+1. Extend Testcontainers with a `MicroProfileApplication` class that can work
+for any JEE/MP implementation. By annotating with `@Container`, Testcontainers 
+will automatically find/build the Dockerfile in this project and start it, then
+wait for the application context root to be ready.
+2. Use new `@RestClient` annotation to create a REST Client proxy of the `PersonService`
+class which is being tested. This is basically a convenience for the test client making
+HTTP requests on the server and then parsing back the response.
