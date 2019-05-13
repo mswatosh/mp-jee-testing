@@ -36,6 +36,7 @@ public class MicroProfileApplication<SELF extends MicroProfileApplication<SELF>>
 
     private String appContextRoot;
     private ServerAdapter serverAdapter;
+    private final List<Class<?>> providers = new ArrayList<>();
 
     public MicroProfileApplication() {
         super(new ImageFromDockerfile().withFileFromPath(".", Paths.get(".")));
@@ -71,6 +72,7 @@ public class MicroProfileApplication<SELF extends MicroProfileApplication<SELF>>
         addExposedPorts(serverAdapter.getDefaultHttpPort());
         withLogConsumer(new Slf4jLogConsumer(LOGGER));
         withAppContextRoot("/");
+        providers.add(JsonBProvider.class);
     }
 
     public SELF withAppContextRoot(String appContextRoot) {
@@ -93,9 +95,12 @@ public class MicroProfileApplication<SELF extends MicroProfileApplication<SELF>>
         return withEnv(envName, hostUrl);
     }
 
+    public SELF withJaxrsProvider(Class<?> providerClass) {
+        providers.add(0, providerClass);
+        return self();
+    }
+
     public <T> T createRestClient(Class<T> clazz, String applicationPath) {
-        List<Class<?>> providers = new ArrayList<>();
-        providers.add(JsonBProvider.class);
         String urlPath = getBaseURL();
         if (applicationPath != null)
             urlPath += applicationPath;
