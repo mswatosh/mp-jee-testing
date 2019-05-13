@@ -25,7 +25,7 @@ public class BasicJAXRSServiceTest {
 
     @Container // (1)
     public static MicroProfileApplication app = new MicroProfileApplication()
-                    .withAppContextRoot("/myservice")
+                    .withAppContextRoot("/myservice");
 
     @RestClient // (2)
     public static PersonService personSvc;
@@ -33,7 +33,7 @@ public class BasicJAXRSServiceTest {
     @Test
     public void testGetPerson() {
         Long bobId = personSvc.createPerson("Bob", 24);
-        Person bob = personSvc.getPerson(bobId);
+        Person bob = personSvc.getPerson(bobId); // (3)
         assertEquals("Bob", bob.name);
         assertEquals(24, bob.age);
         assertNotNull(bob.id);
@@ -50,3 +50,6 @@ wait for the application context root to be ready.
 2. Use new `@RestClient` annotation to create a REST Client proxy of the `PersonService`
 class which is being tested. This is basically a convenience for the test client making
 HTTP requests on the server and then parsing back the response.
+3. Easily invoke HTTP requests on the running server and have the response bound
+back into a POJO (or an exception class if an error occurred)
+
