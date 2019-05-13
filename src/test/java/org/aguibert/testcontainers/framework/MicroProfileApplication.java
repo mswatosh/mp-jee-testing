@@ -85,6 +85,14 @@ public class MicroProfileApplication<SELF extends MicroProfileApplication<SELF>>
         return self();
     }
 
+    public SELF withMpRestClient(Class<?> restClient, String hostUrl) {
+        String envName = restClient.getCanonicalName()//
+                        .replaceAll("\\.", "_")
+                        .replaceAll("\\$", "_") +
+                         "_mp_rest_url";
+        return withEnv(envName, hostUrl);
+    }
+
     public <T> T createRestClient(Class<T> clazz, String applicationPath) {
         List<Class<?>> providers = new ArrayList<>();
         providers.add(JsonBProvider.class);
