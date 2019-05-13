@@ -53,6 +53,18 @@ public class MicroProfileTestExtension implements BeforeAllCallback, TestInstanc
             return;
 
         Class<? extends SharedContainerConfiguration> configClass = clazz.getAnnotation(SharedContainerConfig.class).value();
+
+        // First check if the SharedContainerConfig has implemented a manual container start
+        try {
+            SharedContainerConfiguration configInstance = configClass.newInstance();
+            configInstance.startContainers();
+            return;
+        } catch (UnsupportedOperationException tolerable) {
+        } catch (InstantiationException e) {
+            throw new ExtensionConfigurationException("Problem creating new instance of class: " + configClass, e);
+        }
+
+        // If we get here, the user has not implemented a custom startContainers() method
         Set<GenericContainer<?>> containersToStart = new HashSet<>();
         for (Field containerField : AnnotationSupport.findAnnotatedFields(configClass, Container.class)) {
             if (!Modifier.isStatic(containerField.getModifiers()) || !Modifier.isPublic(containerField.getModifiers()))
@@ -69,7 +81,7 @@ public class MicroProfileTestExtension implements BeforeAllCallback, TestInstanc
         }
         LOGGER.info("Starting containers in parallel for " + configClass + " containers=" + containersToStart);
         long start = System.currentTimeMillis();
-        containersToStart.parallelStream().forEach(container -> container.start());
+        containersToStart.parallelStream().forEach(GenericContainer::start);
         LOGGER.info("All containers started in " + (System.currentTimeMillis() - start) + "ms");
     }
 

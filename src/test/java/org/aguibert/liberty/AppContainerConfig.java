@@ -34,4 +34,10 @@ public class AppContainerConfig implements SharedContainerConfiguration {
                     .withNetwork(Network.SHARED)
                     .withNetworkAliases("testmongo");
 
+    @Override
+    public void startContainers() {
+        // OPTIONAL: this method may be implemented to do custom instantiation/ordering of containers
+        SharedContainerConfiguration.super.startContainers();
+    }
+
 }
