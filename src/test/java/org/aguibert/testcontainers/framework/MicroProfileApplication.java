@@ -3,12 +3,12 @@
  */
 package org.aguibert.testcontainers.framework;
 
+import java.io.File;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.concurrent.Future;
@@ -129,11 +129,6 @@ public class MicroProfileApplication<SELF extends MicroProfileApplication<SELF>>
         }
 
         @Override
-        public boolean acceptsImage(Map<String, String> dockerLayerLabels) {
-            return true;
-        }
-
-        @Override
         public int getDefaultHttpPort() {
             return defaultHttpPort;
         }
@@ -146,6 +141,11 @@ public class MicroProfileApplication<SELF extends MicroProfileApplication<SELF>>
         @Override
         public int getDefaultAppStartTimeout() {
             return 30;
+        }
+
+        @Override
+        public ImageFromDockerfile getDefaultImage(File appFile) {
+            throw new UnsupportedOperationException("Dynamically building image is not supported for default ServerAdapter.");
         }
     }
 

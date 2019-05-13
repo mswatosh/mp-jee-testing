@@ -21,7 +21,8 @@ public class AppContainerConfig implements SharedContainerConfiguration {
                     .withAppContextRoot("/myservice")
                     .withEnv("MONGO_HOSTNAME", "testmongo")
                     .withEnv("MONGO_PORT", "27017")
-                    .withEnv("org_aguibert_liberty_ExternalRestServiceClient_mp_rest_url", "http://mockserver:" + MockServerContainer.PORT);
+                    .withEnv("org_aguibert_liberty_ExternalRestServiceClient_mp_rest_url",
+                             "http://mockserver:" + MockServerContainer.PORT);
 
     @Container
     public static MockServerContainer mockServer = new MockServerContainer()

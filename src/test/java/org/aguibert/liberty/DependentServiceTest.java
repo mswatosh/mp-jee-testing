@@ -17,6 +17,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.google.common.net.MediaType;
 
+@SuppressWarnings("resource")
+
 @Testcontainers
 @MicroProfileTest
 @SharedContainerConfig(AppContainerConfig.class)

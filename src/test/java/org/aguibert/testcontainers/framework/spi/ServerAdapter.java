@@ -3,20 +3,21 @@
  */
 package org.aguibert.testcontainers.framework.spi;
 
-import java.util.Map;
+import java.io.File;
+
+import org.testcontainers.images.builder.ImageFromDockerfile;
 
 /**
  * @author aguibert
- *
  */
 public interface ServerAdapter {
-
-    public boolean acceptsImage(Map<String, String> dockerLayerLabels);
 
     public int getDefaultHttpPort();
 
     public int getDefaultHttpsPort();
 
     public int getDefaultAppStartTimeout();
+
+    public ImageFromDockerfile getDefaultImage(File appFile);
 
 }
