@@ -1,1 +1,16 @@
 rootProject.name = 'mp-jee-testing'
+
+include "mp-jee-testing-core"
+project(':mp-jee-testing-core').projectDir = "$rootDir/core" as File
+
+// Include all modules as mp-jee-testing-<MODULE>
+file('modules').eachDir { dir ->
+    include 'mp-jee-testing-' + dir.name
+    project(':mp-jee-testing-' + dir.name).projectDir = dir
+}
+
+// Include all test app projects as mp-jee-testing-<APP_NAME>
+file('sample-apps').eachDir { dir ->
+    include 'mp-jee-testing-' + dir.name
+    project(':mp-jee-testing-' + dir.name).projectDir = dir
+}

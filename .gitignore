@@ -1,3 +1,7 @@
 .gradle/
 build/
 bin/
+.DS_Store
+.project
+.classpath
+org.eclipse.buildship.core.prefs
