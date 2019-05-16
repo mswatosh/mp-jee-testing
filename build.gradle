@@ -1,58 +1,25 @@
-plugins {
-  id 'war'
-  id 'com.avast.gradle.docker-compose' version "0.9.1"
-}
+subprojects {
+    apply plugin: 'java'
 
-group = 'org.aguibert'
-version = '1.0-SNAPSHOT'
-description = "MicroProfile and JavaEE Testing framework"
+    group = 'io.openliberty'
+    version = '0.1-SNAPSHOT'
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
-tasks.withType(JavaCompile) {
-  options.encoding = 'UTF-8'
-}
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+    compileJava.options.encoding = 'UTF-8'
 
-repositories {
-  mavenCentral()
-}
+    repositories {
+        mavenCentral()
+    }
 
-dependencies {
-  providedCompile 'javax:javaee-api:8.0'
-  providedCompile 'org.eclipse.microprofile:microprofile:2.1'
-  compile group: 'org.mongodb', name: 'mongo-java-driver', version: '3.10.1'
-  testCompile group: 'org.eclipse', name: 'yasson', version: '1.0.3'
-  testCompile group: 'org.glassfish', name: 'javax.json', version: '1.1.4'
-  testCompile group: 'org.testcontainers', name: 'testcontainers', version: '1.11.2'
-  testCompile group: 'org.slf4j', name: 'slf4j-log4j12', version: '1.7.26'
-  testCompile group: 'org.apache.cxf', name: 'cxf-rt-rs-client', version: '3.3.0'
-  testCompile group: 'cglib', name: 'cglib-nodep', version: '3.2.10'
-  testCompile group: 'org.apache.cxf', name: 'cxf-rt-rs-extension-providers', version: '3.3.0'
-  testCompile "org.testcontainers:junit-jupiter:1.11.2"
-  testCompile "org.testcontainers:mockserver:1.11.2"
-  testCompile 'org.mock-server:mockserver-client-java:5.5.1'
-  testImplementation 'org.junit.jupiter:junit-jupiter:5.4.2'
-}
-
-war.archiveName 'myservice.war'
-
-dockerCompose {
-  buildBeforeUp = true
-  captureContainersOutput = true
-  waitForTcpPorts = false
-}
-
-composeBuild.dependsOn 'war'
-composeUp.dependsOn 'composeBuild'
-
-test.dependsOn 'war'
-test {
-    useJUnitPlatform()
-    testLogging {
-        events "passed", "skipped", "failed"
+    test {
+        defaultCharacterEncoding = "UTF-8"
+        useJUnitPlatform()
+        testLogging {
+            displayGranularity 1
+            showStackTraces = true
+            exceptionFormat = 'full'
+            events 'PASSED', 'FAILED', 'SKIPPED'
+        }
     }
 }
-
-// Always re-run tests on every build for the sake of this sample
-// In a real project, this setting would not be desirable
-test.outputs.upToDateWhen { false } 
