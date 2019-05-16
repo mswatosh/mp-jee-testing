@@ -9,7 +9,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
+
+import javax.enterprise.inject.se.SeContainer;
+import javax.enterprise.inject.se.SeContainerInitializer;
+import javax.enterprise.inject.spi.AnnotatedType;
+import javax.enterprise.inject.spi.BeanManager;
 
 import org.aguibert.testcontainers.framework.MicroProfileApplication;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
@@ -22,6 +28,7 @@ import org.junit.platform.commons.support.HierarchyTraversalMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.junit.jupiter.Container;
 
 /**
@@ -33,18 +40,33 @@ public class MicroProfileTestExtension implements BeforeAllCallback, TestInstanc
 
     private static final Map<Class<? extends SharedContainerConfiguration>, MicroProfileApplication<?>> sharedContainers = new HashMap<>();
     private static final Namespace NAMESPACE = Namespace.create(MicroProfileTestExtension.class);
-    private static final String NAMESPACE_KEY = "mpExtensionKey";
+	private static final String NAMESPACE_KEY = "mpExtensionKey";
+	
+	SeContainer container;
 
     @Override
     public void postProcessTestInstance(Object testInstance, ExtensionContext context) throws Exception {
         ExtensionContext.Store store = context.getStore(NAMESPACE);
-        store.put(NAMESPACE_KEY, testInstance);
+		store.put(NAMESPACE_KEY, testInstance);
+		
+		//TODO - MESSAGING: Take generic test classes
+		System.out.println("@MJS SE Container Injection");
+		Class<?> c = testInstance.getClass();
+
+		BeanManager bm = container.getBeanManager();		
+		AnnotatedType<KafkaAndLibertyTest> type = bm.createAnnotatedType(KafkaAndLibertyTest.class);
+		bm.createInjectionTarget(type).inject((KafkaAndLibertyTest) testInstance, bm.createCreationalContext(null));
     }
 
     @Override
     public void beforeAll(ExtensionContext context) throws Exception {
         processSharedContainerConfig(context);
-        injectRestClients(context);
+		injectRestClients(context);
+		
+		addKafkaProperties(context.getTestClass().get());
+
+		System.out.println("@MJS init SE Container");
+		container = SeContainerInitializer.newInstance().initialize();
     }
 
     private static void processSharedContainerConfig(ExtensionContext context) throws IllegalArgumentException, IllegalAccessException {
@@ -133,7 +155,38 @@ public class MicroProfileTestExtension implements BeforeAllCallback, TestInstanc
             throw new ExtensionConfigurationException("No public static MicroProfileApplication fields annotated with @Container were located " +
                                                       "on " + testClass + sharedConfigMsg + " to auto-connect with @RestClient fields.");
         return null;
-    }
+	}
+	
+	private static void addKafkaProperties(Class<?> clazz) throws Exception {
+		Properties props = System.getProperties();
+
+		List<Field> containerFields = AnnotationSupport.findAnnotatedFields(clazz, Container.class);
+		for (Field f : containerFields) {
+			if (KafkaContainer.class.isAssignableFrom(f.getType())) {
+				KafkaContainer kc = (KafkaContainer) f.get(null);
+				String server = kc.getContainerIpAddress() + kc.getBootstrapServers().substring(kc.getBootstrapServers().lastIndexOf(':'));
+
+				//TODO - MESSAGING: determine source/sink name from anno and provide defaults
+				props.setProperty("smallrye.messaging.sink.my-stream.type", "io.smallrye.reactive.messaging.kafka.Kafka");
+				props.setProperty("smallrye.messaging.sink.my-stream.key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+				props.setProperty("smallrye.messaging.sink.my-stream.value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+				props.setProperty("smallrye.messaging.sink.my-stream.acks", "1");
+				props.setProperty("smallrye.messaging.sink.my-stream.topic", "messages");
+				props.setProperty("smallrye.messaging.sink.my-stream.bootstrap.servers", server);
+
+				props.setProperty("smallrye.messaging.source.kafka.type", "io.smallrye.reactive.messaging.kafka.Kafka");
+				props.setProperty("smallrye.messaging.source.kafka.topic", "messages");
+				props.setProperty("smallrye.messaging.source.kafka.key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+				props.setProperty("smallrye.messaging.source.kafka.value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+				props.setProperty("smallrye.messaging.source.kafka.auto.offset.reset", "earliest");
+				props.setProperty("smallrye.messaging.source.kafka.bootstrap.servers", server);
+
+				System.out.println("@MJS set kafka server: " + server);
+			}
+		}
+
+		System.setProperties(props);
+	}
 
     private static void checkPublicStaticNonFinal(Field f) {
         if (!Modifier.isPublic(f.getModifiers()) ||
