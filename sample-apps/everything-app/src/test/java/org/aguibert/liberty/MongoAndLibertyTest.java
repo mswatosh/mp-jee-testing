@@ -5,8 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collection;
 
+import javax.inject.Inject;
+
 import org.aguibert.testcontainers.framework.jupiter.MicroProfileTest;
-import org.aguibert.testcontainers.framework.jupiter.RestClient;
 import org.aguibert.testcontainers.framework.jupiter.SharedContainerConfig;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -16,7 +17,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @SharedContainerConfig(AppContainerConfig.class)
 public class MongoAndLibertyTest {
 
-    @RestClient
+    @Inject
     public static PersonServiceWithMongo personSvc;
 
     @Test

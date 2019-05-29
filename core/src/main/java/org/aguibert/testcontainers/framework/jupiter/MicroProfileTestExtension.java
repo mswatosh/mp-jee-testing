@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.inject.Inject;
+
 import org.aguibert.testcontainers.framework.MicroProfileApplication;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionConfigurationException;
@@ -87,7 +89,7 @@ public class MicroProfileTestExtension implements BeforeAllCallback, TestInstanc
 
     private static void injectRestClients(ExtensionContext context) throws Exception {
         Class<?> clazz = context.getRequiredTestClass();
-        List<Field> restClientFields = AnnotationSupport.findAnnotatedFields(clazz, RestClient.class);
+        List<Field> restClientFields = AnnotationSupport.findAnnotatedFields(clazz, Inject.class);
         if (restClientFields.size() == 0)
             return;
 

@@ -5,11 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 
+import javax.inject.Inject;
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
 
 import org.aguibert.testcontainers.framework.jupiter.MicroProfileTest;
-import org.aguibert.testcontainers.framework.jupiter.RestClient;
 import org.aguibert.testcontainers.framework.jupiter.SharedContainerConfig;
 import org.junit.jupiter.api.Test;
 import org.mockserver.client.MockServerClient;
@@ -24,7 +24,7 @@ import com.google.common.net.MediaType;
 @SharedContainerConfig(AppContainerConfig.class)
 public class DependentServiceTest {
 
-    @RestClient
+    @Inject
     public static PersonServiceWithPassthrough personSvc;
 
     static final Jsonb jsonb = JsonbBuilder.create();
