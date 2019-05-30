@@ -14,7 +14,6 @@
 # Proposed mockup:
 ```java
 import org.aguibert.testcontainers.framework.jupiter.MicroProfileTest;
-import org.aguibert.testcontainers.framework.jupiter.RestClient;
 import org.aguibert.testcontainers.framework.jupiter.SharedContainerConfig;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -27,7 +26,7 @@ public class BasicJAXRSServiceTest {
     public static MicroProfileApplication app = new MicroProfileApplication()
                     .withAppContextRoot("/myservice");
 
-    @RestClient // (2)
+    @Inject // (2)
     public static PersonService personSvc;
 
     @Test
@@ -47,7 +46,7 @@ public class BasicJAXRSServiceTest {
 for any JEE/MP implementation. By annotating with `@Container`, Testcontainers 
 will automatically find/build the Dockerfile in this project and start it, then
 wait for the application context root to be ready.
-2. Use new `@RestClient` annotation to create a REST Client proxy of the `PersonService`
+2. Use the `@Inject` annotation to create a REST Client proxy of the `PersonService`
 class which is being tested. This is basically a convenience for the test client making
 HTTP requests on the server and then parsing back the response.
 3. Easily invoke HTTP requests on the running server and have the response bound

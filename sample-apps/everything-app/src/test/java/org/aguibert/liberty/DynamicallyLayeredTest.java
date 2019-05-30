@@ -2,10 +2,11 @@ package org.aguibert.liberty;
 
 import static org.junit.Assert.assertNotNull;
 
+import javax.inject.Inject;
+
 import org.aguibert.testcontainers.framework.ComposedMicroProfileApplication;
 import org.aguibert.testcontainers.framework.MicroProfileApplication;
 import org.aguibert.testcontainers.framework.jupiter.MicroProfileTest;
-import org.aguibert.testcontainers.framework.jupiter.RestClient;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Container;
@@ -27,7 +28,7 @@ public class DynamicallyLayeredTest {
     public static MicroProfileApplication<?> myService = new ComposedMicroProfileApplication<>()
                     .withAppContextRoot("myservice");
 
-    @RestClient
+    @Inject
     public static PersonService personSvc;
 
     @Test

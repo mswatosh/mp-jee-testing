@@ -14,6 +14,7 @@ dependencies {
   compile group: 'org.apache.cxf', name: 'cxf-rt-rs-client', version: '3.3.0'
   compile group: 'cglib', name: 'cglib-nodep', version: '3.2.10'
   compile group: 'org.apache.cxf', name: 'cxf-rt-rs-extension-providers', version: '3.3.0'
+  compile group: 'javax.inject', name: 'javax.inject', version: '1'
   compile "org.testcontainers:junit-jupiter:1.11.2"
   compile "org.testcontainers:mockserver:1.11.2"
   compile 'org.mock-server:mockserver-client-java:5.5.1'
