@@ -78,10 +78,12 @@ public class MicroProfileTestExtension implements BeforeAllCallback, TestInstanc
             if (!startableContainer.isRunning()) {
                 containersToStart.add(startableContainer);
             } else {
-                LOGGER.info("Found already running contianer instance: " + startableContainer);
+                LOGGER.info("Found already running contianer instance: " + startableContainer.getContainerId());
             }
         }
-        LOGGER.info("Starting containers in parallel for " + configClass + " containers=" + containersToStart);
+        LOGGER.info("Starting containers in parallel for " + configClass);
+        for (GenericContainer<?> c : containersToStart)
+            LOGGER.info("  " + c.getImage());
         long start = System.currentTimeMillis();
         containersToStart.parallelStream().forEach(GenericContainer::start);
         LOGGER.info("All containers started in " + (System.currentTimeMillis() - start) + "ms");
