@@ -17,6 +17,7 @@ subprojects {
         useJUnitPlatform()
         testLogging {
             displayGranularity 1
+            showStandardStreams = true
             showStackTraces = true
             exceptionFormat = 'full'
             events 'PASSED', 'FAILED', 'SKIPPED'
