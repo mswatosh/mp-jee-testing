@@ -8,8 +8,17 @@
 # How to run locally:
 
 ```
-./gradlew test
+./gradlew :mp-jee-testing-jaxrs-json:test
 ```
+NOTE: The first run will take longer due to downloading required container layers. Subsequent runs will be faster.
+
+Tested with:
+- OpenLiberty / WAS Liberty
+- Wildfly
+- Payara Micro
+- TomEE
+
+To change which app server is used, [un]comment sections of the test app's Dockerfile at `sample-apps/jaxrs-json/Dockerfile`
 
 # Proposed mockup:
 ```java
