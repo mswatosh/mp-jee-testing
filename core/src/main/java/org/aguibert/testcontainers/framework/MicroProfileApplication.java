@@ -87,6 +87,31 @@ public class MicroProfileApplication<SELF extends MicroProfileApplication<SELF>>
         return self();
     }
 
+    /**
+     * @param readinessUrl The container readiness path to be used to determine container readiness.
+     *            If the path starts with '/' it is an absolute path (after hostname and port). If it does not
+     *            start with '/', the path is relative to the current appContextRoot.
+     */
+    public SELF withReadinessPath(String readinessUrl) {
+        withReadinessPath(readinessUrl, serverAdapter.getDefaultAppStartTimeout());
+        return self();
+    }
+
+    /**
+     * @param readinessUrl The container readiness path to be used to determine container readiness.
+     *            If the path starts with '/' it is an absolute path (after hostname and port). If it does not
+     *            start with '/', the path is relative to the current appContextRoot.
+     * @param timeout The amount of time to wait for the container to be ready.
+     */
+    public SELF withReadinessPath(String readinessUrl, int timeoutSeconds) {
+        Objects.requireNonNull(readinessUrl);
+        if (!readinessUrl.startsWith("/"))
+            readinessUrl = appContextRoot + readinessUrl;
+        waitingFor(Wait.forHttp(readinessUrl)
+                        .withStartupTimeout(Duration.ofSeconds(timeoutSeconds)));
+        return self();
+    }
+
     public SELF withMpRestClient(Class<?> restClient, String hostUrl) {
         String envName = restClient.getCanonicalName()//
                         .replaceAll("\\.", "_")
