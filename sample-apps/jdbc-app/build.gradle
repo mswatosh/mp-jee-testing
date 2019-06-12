@@ -14,7 +14,7 @@ dependencies {
   testCompile "org.testcontainers:postgresql:1.11.2"
   testCompile project(':mp-jee-testing-core')
   testImplementation 'org.junit.jupiter:junit-jupiter:5.4.2'
-  postgres "postgresql:postgresql:9.1-901-1.jdbc4"
+  postgres "org.postgresql:postgresql:42.2.5"
 }
 
 task copyDriver(type: Copy) {

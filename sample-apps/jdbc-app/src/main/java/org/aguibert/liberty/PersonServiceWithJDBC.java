@@ -59,70 +59,42 @@ public class PersonServiceWithJDBC {
 	@PostConstruct
 	public void initPeople() {
 		System.out.println("Seeding database with sample data");
-		Connection conn = null;
-		try {
-			conn = defaultDataSource.getConnection();
-			conn.prepareStatement("CREATE TABLE people (id bigint, name text, age integer)").execute();
+		try (Connection conn = defaultDataSource.getConnection()){
+			conn.prepareStatement("CREATE TABLE IF NOT EXISTS people (id bigint, name text, age integer)").execute();
 		} catch (SQLException e) {
 			e.printStackTrace(System.out);
-		} finally {
-			try{
-				if (conn != null) conn.close();
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
 		}
 		createPerson("Sample Person A", 25);
-		createPerson("Sample Person B", 26);
-        
+		createPerson("Sample Person B", 26);   
     }
 
     @GET
     public Collection<Person> getAllPeople(){
         Set<Person> allPeople = new HashSet<>();
-		Connection conn = null;
-		ResultSet rs = null;
-        try {
-			conn = defaultDataSource.getConnection();
-			rs = conn.prepareStatement("SELECT name, age, id FROM people").executeQuery();
+
+		try (Connection conn = defaultDataSource.getConnection();
+			 ResultSet rs = conn.prepareStatement("SELECT name, age, id FROM people").executeQuery()){
 			while (rs.next()) {
 				allPeople.add(new Person(rs.getString("name"),rs.getInt("age"),rs.getLong("id")));
 			}			
 			return allPeople;
 		} catch (SQLException e) {
 			e.printStackTrace(System.out);
-		} finally {
-			try{
-				if (rs != null) rs.close();
-				if (conn != null) conn.close();
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
-		}
+		} 
         throw new InternalServerErrorException("Could not get all people");  
     }
 
     @GET
     @Path("/{personId}")
     public Person getPerson(@PathParam("personId") long id) {
-		Connection conn = null;
-		ResultSet rs = null;
-        try {
-			conn = defaultDataSource.getConnection();
-			rs = conn.prepareStatement("SELECT name, age FROM people WHERE id = "+id).executeQuery();
+        try (Connection conn = defaultDataSource.getConnection();
+			 ResultSet rs = conn.prepareStatement("SELECT name, age FROM people WHERE id = "+id).executeQuery()){
 			if (rs.next()) {
 				return new Person(rs.getString("name"),rs.getInt("age"),id);
 			}			
 			throw new NotFoundException("Person with id " + id + " not found.");
 		} catch (SQLException e) {
 			e.printStackTrace(System.out);
-		} finally {
-			try{
-				if (rs != null) rs.close();
-				if (conn != null) conn.close();
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
 		}
 		throw new InternalServerErrorException("Could not get person");  
     }
@@ -131,11 +103,9 @@ public class PersonServiceWithJDBC {
     public Long createPerson(@QueryParam("name") @NotEmpty @Size(min = 2, max = 50) String name,
                              @QueryParam("age") @PositiveOrZero int age){
 		Person p = new Person(name, age);
-		Connection conn = null;
-		PreparedStatement ps = null;
-		try {
-			conn = defaultDataSource.getConnection();
-			ps = conn.prepareStatement("INSERT INTO people VALUES(?,?,?)");
+
+		try (Connection conn = defaultDataSource.getConnection();
+			 PreparedStatement ps = conn.prepareStatement("INSERT INTO people VALUES(?,?,?)")){
 			ps.setLong(1, p.id);
 			ps.setString(2, name);
 			ps.setInt(3, age);
@@ -143,13 +113,6 @@ public class PersonServiceWithJDBC {
 			return p.id;	
 		} catch (SQLException e) {
 			e.printStackTrace(System.out);
-		} finally {
-			try{
-				if (ps != null) ps.close();
-				if (conn != null) conn.close();
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
 		}
 		throw new InternalServerErrorException("Could not create new person");    
     }
@@ -157,11 +120,8 @@ public class PersonServiceWithJDBC {
     @POST
     @Path("/{personId}")
     public void updatePerson(@PathParam("personId") long id, @Valid Person p) {
-		Connection conn = null;
-		PreparedStatement ps = null;
-        try {
-			conn = defaultDataSource.getConnection();
-			ps = conn.prepareStatement("UPDATE people SET name = ?, age = ? WHERE id = ?");
+        try (Connection conn = defaultDataSource.getConnection();
+			 PreparedStatement ps = conn.prepareStatement("UPDATE people SET name = ?, age = ? WHERE id = ?")){
 			ps.setString(1, p.name);
 			ps.setInt(2, p.age);		
 			ps.setLong(3, p.id);
@@ -171,25 +131,15 @@ public class PersonServiceWithJDBC {
 			throw new NotFoundException("Person with id " + id + " not found.");
 		} catch (SQLException e) {
 			e.printStackTrace(System.out);
-		} finally {
-			try{
-				if (ps != null) ps.close();
-				if (conn != null) conn.close();
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
-		}
+		} 
 		throw new InternalServerErrorException("Could not update person");   
     }
 
     @DELETE
     @Path("/{personId}")
     public void removePerson(@PathParam("personId") long id) {
-		Connection conn = null;
-		PreparedStatement ps = null;
-        try {
-			conn = defaultDataSource.getConnection();
-			ps = conn.prepareStatement("DELETE FROM people WHERE id = ?");
+        try (Connection conn = defaultDataSource.getConnection();
+			 PreparedStatement ps = conn.prepareStatement("DELETE FROM people WHERE id = ?")){
 			ps.setLong(1,id);
 			if (ps.executeUpdate() > 0) {
 				return;
@@ -197,13 +147,6 @@ public class PersonServiceWithJDBC {
 			throw new NotFoundException("Person with id " + id + " not found.");
 		} catch (SQLException e) {
 			e.printStackTrace(System.out);
-		} finally {
-			try{
-				if (ps != null) ps.close();
-				if (conn != null) conn.close();
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
 		}
 		throw new InternalServerErrorException("Could not delete person"); 
     }

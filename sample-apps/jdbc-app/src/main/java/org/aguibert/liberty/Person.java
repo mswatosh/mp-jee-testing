@@ -27,10 +27,6 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.PositiveOrZero;
 import javax.validation.constraints.Size;
 
-
-/**
- * @author aguibert
- */
 public class Person {
 
     private static final Random r = new Random();
